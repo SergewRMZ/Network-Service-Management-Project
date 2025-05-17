@@ -1,3 +1,4 @@
+# Import necessary libraries for asynchronous SNMP queries
 import asyncio
 from pysnmp.hlapi.v3arch.asyncio import (
     SnmpEngine, UdpTransportTarget, CommunityData,
@@ -7,37 +8,41 @@ from pysnmp.hlapi.v3arch.asyncio import (
 from pysnmp.smi import builder, view
 from pysnmp.proto.rfc1902 import ObjectName
 
+# Main class to interact with a router using SNMP
 class RouterSNMPClient:
+    # Constructor
     def __init__(self, host, name, community='public', port=161):
-        self.host = host
-        self.community = community
-        self.port = port
-        self.name = name
+        self.host = host                  # IP or hostname of the router
+        self.community = community        # SNMP community string (default: 'public')
+        self.port = port                  # SNMP port (default: 161)
+        self.name = name                  # Name to identify the router
 
-
+    # Performs a single SNMP GET query for one OID
     async def snmp_get(self, oid):
         snmpEngine = SnmpEngine()
-        transport = await UdpTransportTarget.create((self.host, self.port))
+        transport = await UdpTransportTarget.create((self.host, self.port))  # Set up transport
         result = await get_cmd(
             snmpEngine,
-            CommunityData(self.community, mpModel=1),
+            CommunityData(self.community, mpModel=1),  # mpModel=1 means SNMPv2c
             transport,
             ContextData(),
-            ObjectType(ObjectIdentity(oid))
+            ObjectType(ObjectIdentity(oid))            # The OID to query
         )
 
         errorIndication, errorStatus, errorIndex, varBinds = result
 
         if errorIndication or errorStatus:
-            return None
-        return varBinds[0][1].prettyPrint()
+            return None  # Return None if there was an error
+        return varBinds[0][1].prettyPrint()  # Return the value as a string
 
+    # Performs an SNMP WALK on a base OID (walks through sub-OIDs)
     async def snmp_walk(self, oid):
         snmpEngine = SnmpEngine()
         result = []
 
         transport = await UdpTransportTarget.create((self.host, self.port))
 
+        # Create a MIB view to resolve object names
         mibViewController = view.MibViewController(snmpEngine.get_mib_builder())
 
         base_oid_obj = ObjectIdentity(oid).resolveWithMib(mibViewController).getOid()
@@ -45,6 +50,7 @@ class RouterSNMPClient:
         current_oid = ObjectIdentity(oid)
 
         while True:
+            # Perform the next SNMP query in the hierarchy
             iterator = next_cmd(
                 snmpEngine,
                 CommunityData(self.community, mpModel=1),
@@ -70,69 +76,71 @@ class RouterSNMPClient:
                     current_oid_obj = ObjectName(name)
 
                     if not current_oid_obj[:len(base_oid)] == base_oid:
-                        return result
+                        return result  # Stop if OID is outside the base OID subtree
 
                     result.append((str(name), val.prettyPrint()))
                     current_oid = ObjectIdentity(name)
 
-        return result
+        return result  # Returns a list of (OID, value) tuples
 
+    # Retrieves detailed information about the router's interfaces
     async def get_interface_info(self):
-        if_types = await self.snmp_walk('1.3.6.1.2.1.2.2.1.3')
-        if_statuses = await self.snmp_walk('1.3.6.1.2.1.2.2.1.8')
-        if_names = await self.snmp_walk('1.3.6.1.2.1.31.1.1.1.1')
+        # Query multiple interface attributes
+        if_types = await self.snmp_walk('1.3.6.1.2.1.2.2.1.3')   # Interface type
+        if_statuses = await self.snmp_walk('1.3.6.1.2.1.2.2.1.8') # Interface status
+        if_names = await self.snmp_walk('1.3.6.1.2.1.31.1.1.1.1') # Logical interface name
 
-        ip_to_index = await self.snmp_walk('1.3.6.1.2.1.4.20.1.2')
-        subnet_masks = await self.snmp_walk('1.3.6.1.2.1.4.20.1.3')
+        ip_to_index = await self.snmp_walk('1.3.6.1.2.1.4.20.1.2') # Maps IPs to interface index
+        subnet_masks = await self.snmp_walk('1.3.6.1.2.1.4.20.1.3') # Maps IPs to subnet masks
 
         interfaces = []
 
         for name_oid, name in if_names:
-            index = int(name_oid.split('.')[-1])
+            index = int(name_oid.split('.')[-1])  # Extract interface index
             type_oid = f'1.3.6.1.2.1.2.2.1.3.{index}'
             status_oid = f'1.3.6.1.2.1.2.2.1.8.{index}'
 
-            tipo = next((v for k, v in if_types if k.endswith(f'.{index}')), 'desconocido')
-            estado_val = next((v for k, v in if_statuses if k.endswith(f'.{index}')), 'desconocido')
+            tipo = next((v for k, v in if_types if k.endswith(f'.{index}')), 'unknown')
+            estado_val = next((v for k, v in if_statuses if k.endswith(f'.{index}')), 'unknown')
 
+            # Map SNMP status code to human-readable text
             estado = {
                 '1': 'up',
                 '2': 'down',
                 '3': 'testing'
-            }.get(estado_val, 'desconocido')
+            }.get(estado_val, 'unknown')
 
             ip = None
-            mascara = None
+            mask = None
 
             for ip_oid, idx in ip_to_index:
                 if int(idx) == index:
-                    ip = ip_oid.split('.')[-4:]
-                    ip = '.'.join(ip)
+                    ip_parts = ip_oid.split('.')[-4:]  # Extract IP address from OID
+                    ip = '.'.join(ip_parts)
                     mask = next((m for k, m in subnet_masks if k.endswith(ip)), None)
-                    if mask:
-                        mascara = mask
                     break
 
             interfaces.append({
                 "nombre": name,
                 "numero": index,
                 "tipo": tipo,
-                "ip": ip or "No asignada",
-                "mascara": mascara or "Desconocida",
+                "ip": ip or "Unassigned",
+                "mascara": mask or "Unknown",
                 "estado": estado
             })
 
-        return interfaces
+        return interfaces  # List of interfaces with detailed info
 
+    # Retrieves general information about the router: system name, OS, active interfaces, etc.
     async def get_general_info(self, rol=None, empresa=None):
-        nombre = await self.snmp_get('1.3.6.1.2.1.1.5.0')
-        hex_os = await self.snmp_get('1.3.6.1.2.1.1.1.0')
-        decoded_os = self.decode_hex_string(hex_os)
+        nombre = await self.snmp_get('1.3.6.1.2.1.1.5.0')         # System name
+        hex_os = await self.snmp_get('1.3.6.1.2.1.1.1.0')         # OS in hexadecimal format
+        decoded_os = self.decode_hex_string(hex_os)              # Decode hex to readable string
         
-        status_list = await self.snmp_walk('1.3.6.1.2.1.2.2.1.8') 
-        names_list = await self.snmp_walk('1.3.6.1.2.1.2.2.1.2')
+        status_list = await self.snmp_walk('1.3.6.1.2.1.2.2.1.8') # Interface status list
+        names_list = await self.snmp_walk('1.3.6.1.2.1.2.2.1.2')  # Interface name list
 
-
+        # Map interface index to names
         interface_names = {
             int(oid.split('.')[-1]): name
             for oid, name in names_list
@@ -141,35 +149,32 @@ class RouterSNMPClient:
         interfaces_status = []
         for oid, state in status_list:
             index = int(oid.split('.')[-1])
-            if state == '1':  # 1 = up
-                int_name = interface_names.get(index, f"Desconocida {index}")
+            if state == '1':  # Only include active interfaces
+                int_name = interface_names.get(index, f"Unknown {index}")
                 interfaces_status.append({
                     "nombre": int_name,
-                    "estado": "activa"
+                    "estado": "active"
                 })
 
+        # Return all general information
         return {
-            "host": self.host,
             "nombre": nombre,
-            "ip_administrativa": self.host,
             "sistema_operativo": decoded_os,
-            "empresa": empresa or "Desconocida",
-            "rol": rol or "No definido",
-            "interfaces": interfaces_status
+            "interfaces_activas": interfaces_status,
+            "rol": rol,
+            "empresa": empresa
         }
 
-    def get_loopback_ip(self, ips):
-        for ip in ips:
-            if ip.startswith("127.") or ip.startswith("10.") or ip.startswith("172."):
-                return ip
-        return ips[0] if ips else "No encontrada"
-
-    def decode_hex_string(self,hex_str):
+    # Helper function to decode hexadecimal strings into plain text
+    def decode_hex_string(self, hex_string):
         try:
-            bytes_object = bytes.fromhex(hex_str.replace("0x", ""))
-            return bytes_object.decode("utf-8", errors="replace")
-        except Exception as e:
-            return f"Error decoding: {e}"
+            if hex_string.startswith("0x"):
+                hex_string = hex_string[2:]  # eliminar "0x"
+            hex_string = hex_string.replace(" ", "").replace("\n", "")
+            bytes_data = bytes.fromhex(hex_string)
+            return bytes_data.decode('utf-8', errors='ignore')
+        except Exception:
+            return hex_string
     
     async def get_router_neighbors(self):
         try:
@@ -244,17 +249,3 @@ class RouterSNMPClient:
         ip = [str(int(hex_str[i:i+2], 16)) for i in range(0, len(hex_str), 2)]
         return '.'.join(ip)
     
-    def simplificar_conexiones(self, red):
-        simplified_connections = set()
-
-        for ip, router in red:
-            # Obtener solo el nombre del router (sin el dominio)
-            connected_router = router.split('.')[0]
-            for other_ip, other_router in red:
-                # Obtener solo el nombre del otro router
-                other_connected_router = other_router.split('.')[0]
-                if router != other_router:
-                    # Añadir la conexión entre los routers de manera ordenada
-                    simplified_connections.add(tuple(sorted([connected_router, other_connected_router])))
-
-        return simplified_connections

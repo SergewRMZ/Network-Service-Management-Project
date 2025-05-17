@@ -13,7 +13,7 @@ class RouterService:
     async def get_all_router_info(self):
         routers_info = []
         for router in self.routers:
-            client = RouterSNMPClient(router["ip"], self.router["name"], router.get("community", "public"))
+            client = RouterSNMPClient(router["ip"], router["name"], router.get("community", "public"))
             info = await client.get_general_info(
                 rol=router.get("rol") or "Indefinido",
                 empresa=router.get("empresa") or "Indefinido"
@@ -25,7 +25,7 @@ class RouterService:
         router = self._get_router(host)
         if not router:
             return None
-        client = RouterSNMPClient(router["ip"], self.router["name"], router.get("community", "public"))
+        client = RouterSNMPClient(router["ip"], router["name"], router.get("community", "public"))
         
         return await client.get_general_info(
             rol=router.get("rol"),
@@ -37,6 +37,6 @@ class RouterService:
         if not router:
             return None
         
-        client = RouterSNMPClient(router["ip"], self.router["name"], router.get("community", "public"))
+        client = RouterSNMPClient(router["ip"], router["name"], router.get("community", "public"))
         
         return await client.get_interface_info()

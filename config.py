@@ -11,14 +11,14 @@ ROUTERS = [
         "ip": "192.168.100.2",
         "username": "admin",
         "password": "12345",
-        "rol": "Nucelo"
+        "rol": "Nucleo"
     },
     {
         "name": "R3.redes.local",
         "ip": "192.168.100.3",
         "username": "admin",
         "password": "12345",
-        "rol": "Nucelo"
+        "rol": "Nucleo"
     },
     {
         "name": "R4.redes.local",

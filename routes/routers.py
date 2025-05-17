@@ -59,7 +59,7 @@ def get_routers_snmp_info():
     
     return jsonify(info), 200
 
-@routers_bp.route("/<host>/", methods=["GET"])
+@routers_bp.route("/<host>", methods=["GET"])
 def get_router_snmp_info(host):
     info = asyncio.run(router_service.get_router_info(host))
 
@@ -68,7 +68,7 @@ def get_router_snmp_info(host):
     
     return jsonify(info), 200
 
-@routers_bp.route("/<host>/interfaces/", methods=["GET"])
+@routers_bp.route("/<host>/interfaces", methods=["GET"])
 def get_interface_info(host):
     info = asyncio.run(router_service.get_interface_info(host))
 

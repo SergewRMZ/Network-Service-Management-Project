@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from services.user_service import UserService
 from config import ROUTERS
+#  from configpractia import ROUTERS ?
 
 user_service = UserService(ROUTERS)
 

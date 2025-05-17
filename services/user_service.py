@@ -13,7 +13,7 @@ class UserService:
     def get_all_users(self):
         all_users = []
         for router in self.routers:
-            client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+            client = RouterSSHClient(router["ip"], router["username"], router["password"])
             users = client.get_users()
             for user in users:
                 user_info = {
@@ -29,7 +29,7 @@ class UserService:
         if not router:
             return None
 
-        client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+        client = RouterSSHClient(router["ip"], router["username"], router["password"])
         users = client.get_users()
         for user in users:
             user["router"] = router["ip"]
@@ -38,7 +38,7 @@ class UserService:
     def create_user(self, new_user):
         results = []
         for router in self.routers:
-            client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+            client = RouterSSHClient(router["ip"], router["username"], router["password"])
             result = client.create_user(
                 new_user["username"],
                 new_user["privilege"],
@@ -52,7 +52,7 @@ class UserService:
         router = self._get_router(host)
         if not router:
             return None
-        client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+        client = RouterSSHClient(router["ip"], router["username"], router["password"])
         result = client.create_user(
             new_user["username"],
             new_user["privilege"],
@@ -64,7 +64,7 @@ class UserService:
     def delete_user(self, username):
         results = []
         for router in self.routers:
-            client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+            client = RouterSSHClient(router["ip"], router["username"], router["password"])
             result = client.delete_user(username)
             result["router"] = router["ip"]
             results.append(result)
@@ -74,7 +74,7 @@ class UserService:
         router = self._get_router(host)
         if not router:
             return None
-        client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+        client = RouterSSHClient(router["ip"], router["username"], router["password"])
         result = client.delete_user(username)
         result["router"] = router["ip"]
         return result
@@ -82,12 +82,12 @@ class UserService:
     def update_users(self, old_username, new_user):
         results = []
         for router in self.routers:
-            client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+            client = RouterSSHClient(router["ip"], router["username"], router["password"])
             result = client.update_user(
                 old_username,
                 new_user["username"],
-                new_user["privilege"],
-                new_user["password"]
+                new_user["password"],
+                new_user["privilege"]
             )
             result["router"] = router["ip"]
             results.append(result)
@@ -97,12 +97,12 @@ class UserService:
         router = self._get_router(host)
         if not router:
             return None
-        client = RouterSSHClient(router["ip"], self.router["name"], router["username"], router["password"])
+        client = RouterSSHClient(router["ip"], router["username"], router["password"])
         result = client.update_user(
             old_username,
             new_user["username"],
+            new_user["password"],
             new_user["privilege"],
-            new_user["password"]
         )
         result["router"] = router["ip"]
         return result

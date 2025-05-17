@@ -10,6 +10,5 @@ app.register_blueprint(users_bp, url_prefix="/usuarios")
 app.register_blueprint(routers_bp, url_prefix="/routers")
 app.register_blueprint(topology_bp, url_prefix="/topologia")
 
-
 if __name__ == '__main__':
     app.run(debug=True)

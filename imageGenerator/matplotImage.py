@@ -5,14 +5,7 @@ class MatplotImage:
     def __init__(self):
         pass
 
-    def plot_network(connections, file_name="network_graph.png"):
-        """
-        Function to plot the connections between routers and save the image.
-
-        Parameters:
-        - connections: a set of tuples where each tuple contains two connected routers.
-        - file_name: the name of the file to save the image (default is "network_graph.png").
-        """
+    def plot_network(self, connections, file_name="network_graph.png"):
         # Create an undirected graph
         G = nx.Graph()
 

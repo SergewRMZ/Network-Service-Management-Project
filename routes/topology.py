@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from services.topology_service import TopologyService
+from imageGenerator.matplotImage import MatplotImage 
 from config import ROUTERS
 import asyncio
 import threading
@@ -33,14 +34,8 @@ def demonio_func():
 
 @topology_bp.route("/", methods=["GET"])
 def get_topology():
-    if os.path.exists("topology.json"):
-        with open("topology.json", "r") as f:
-            topology = json.load(f)
-    else:
-        topology_set = asyncio.run(service.get_topology())
-        topology = list(topology_set)
-        with open("topology.json", "w") as f:
-            json.dump(topology, f)
+    topology_set = asyncio.run(service.get_topology())
+    topology = list(topology_set)
 
     return jsonify(topology), 200
 
@@ -63,12 +58,32 @@ def start_or_update_demonio():
         return jsonify({"message": "Demonio iniciado."}), 200
     else:
         return jsonify({"message": "Demonio ya está corriendo."}), 200
+    
+@topology_bp.route("/grafica", methods=["GET"])
+def get_image():
+    if os.path.exists("topology.json"):
+        with open("topology.json", "r") as f:
+            topology = json.load(f)
+    else:
+        topology_set = asyncio.run(service.get_topology())
+        topology = list(topology_set)
+
+
+    image = MatplotImage()
+
+    image.plot_network(topology)
+
+    return send_file("network_graph.png", mimetype="image/png")
 
 @topology_bp.route("/", methods=["DELETE"])
 def stop_demonio():
     global demonio_running
     if demonio_running:
         demonio_running = False
-        return jsonify({"message": "Demonio detenido."}), 200
+
+        if os.path.exists("topology.json"):
+            os.remove("topology.json")
+
+        return jsonify({"message": "Demonio detenido y archivo eliminado."}), 200
     else:
         return jsonify({"message": "No hay demonio corriendo."}), 400
