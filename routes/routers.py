@@ -109,3 +109,21 @@ def obtener_datos_monitoreo_octetos(host, interfaz):
         data = json.load(f)
 
     return jsonify(data), 200
+
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/octetos", methods=["DELETE"])
+def detener_monitoreo_octetos(host, interfaz):
+    ok = monitor_service.stop_monitoring(host, interfaz)
+
+    filename = f"data/{host.replace('.', '_')}_{interfaz.replace('/', '_')}.json"
+
+    if ok:
+        return jsonify({
+            "message": f"Monitoreo detenido en {interfaz} del router {host}",
+            "estado": "detenido",
+            "archivo_guardado": os.path.exists(filename)
+        }), 200
+    else:
+        return jsonify({
+            "message": f"No había un monitoreo activo en {interfaz} del router {host}",
+            "estado": "inexistente"
+        }), 400
