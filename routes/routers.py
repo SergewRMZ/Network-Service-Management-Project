@@ -4,7 +4,8 @@ from services.routers_service import RouterService
 from services.monitor_service import MonitorService
 from config import ROUTERS
 import asyncio
-
+import os
+import json
 user_service = UserService(ROUTERS)
 
 router_service = RouterService(ROUTERS)
@@ -96,3 +97,15 @@ def iniciar_monitoreo_octetos(host, interfaz, tiempo):
             "message": f"Ya hay un monitoreo activo en {interfaz} del router {host}",
             "estado": "en conflicto"
         }), 400
+
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/octetos", methods=["GET"])
+def obtener_datos_monitoreo_octetos(host, interfaz):
+    filename = f"data/{host.replace('.', '_')}_{interfaz.replace('/', '_')}.json"
+
+    if not os.path.exists(filename):
+        return jsonify({"error": "No hay datos almacenados para esta interfaz"}), 404
+
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    return jsonify(data), 200
