@@ -1,12 +1,14 @@
 from flask import Blueprint, jsonify, request
 from services.user_service import UserService
 from services.routers_service import RouterService
+from services.monitor_service import MonitorService
 from config import ROUTERS
 import asyncio
 
 user_service = UserService(ROUTERS)
 
 router_service = RouterService(ROUTERS)
+monitor_service = MonitorService(ROUTERS)
 
 routers_bp = Blueprint('routers', __name__)
 
@@ -76,3 +78,21 @@ def get_interface_info(host):
         return jsonify({"error": f"Router {host} no encontrado"}), 404  
     
     return jsonify(info), 200
+
+# Rutas para MonitorService
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/octetos/<int:tiempo>", methods=["POST"])
+def iniciar_monitoreo_octetos(host, interfaz, tiempo):
+    duracion = request.args.get("duracion", default=60, type=int)
+    ok = monitor_service.start_monitoring(host, interfaz, tiempo, duracion)
+    if ok:
+        return jsonify({
+            "message": f"Monitoreo iniciado en {interfaz} del router {host}",
+            "intervalo": tiempo,
+            "duracion": duracion,
+            "estado": "activo"
+        }), 200
+    else:
+        return jsonify({
+            "message": f"Ya hay un monitoreo activo en {interfaz} del router {host}",
+            "estado": "en conflicto"
+        }), 400

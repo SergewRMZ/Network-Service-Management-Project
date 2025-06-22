@@ -1,4 +1,4 @@
-#!/home/kevaron/Desktop/network-admin-py/env/bin/python3
+#!/home/serge/Escritorio/ASR/project/network-admin-py/env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
