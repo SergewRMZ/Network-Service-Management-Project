@@ -29,3 +29,24 @@ curl -X DELETE http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/octe
 ```
 curl http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/grafica --output grafica.png
 ```
+
+# Traps
+## Solicitud GET
+```
+curl http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/estado
+```
+
+## Solucitud POST
+```
+curl -X POST http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/estado
+```
+
+## Solicitud DELETE
+```
+curl -X DELETE http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/estado
+```
+
+## Grafica
+```
+curl http://localhost:5000/routers/192.168.100.4/interfaces/Fa1/1/grafica_traps --output grafica_traps.png
+```

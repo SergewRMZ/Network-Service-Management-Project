@@ -5,7 +5,7 @@ from config import ROUTERS
 from services.user_service import UserService
 from services.routers_service import RouterService
 from services.monitor_service import MonitorService
-
+from services.traps_service import TrapsService
 import asyncio
 import os
 import json
@@ -14,6 +14,7 @@ import io
 user_service = UserService(ROUTERS)
 router_service = RouterService(ROUTERS)
 monitor_service = MonitorService(ROUTERS)
+traps_service = TrapsService(ROUTERS)
 
 routers_bp = Blueprint('routers', __name__)
 
@@ -158,6 +159,80 @@ def obtener_grafica_monitoreo(host, interfaz):
     plt.tight_layout()
 
     # Guarda en buffer en memoria
+    img = io.BytesIO()
+    plt.savefig(img, format="png")
+    img.seek(0)
+    plt.close()
+
+    return send_file(img, mimetype="image/png")
+
+# Traps
+# Get - json con estado de la interfaz
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/estado", methods=["GET"])
+def estado_interfaz(host, interfaz):
+    estado = traps_service.get_interface_trap_status(host, interfaz)
+    if estado is None:
+        return jsonify({"Error": f"No se encontro el router {host} o la interfaz {interfaz}"}), 404
+    return jsonify(estado), 200
+
+
+# Post - activa la captura de traps linkup y linkdown de una interfaz en espacifico, retornar json con el estado de la interfaz
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/estado", methods=["POST"])
+def activar_traps_interfaz(host, interfaz):
+    ok = traps_service.start_trap_capture(host, interfaz)
+    if ok:
+        estado = traps_service.get_interface_trap_status(host, interfaz)
+        return jsonify({
+            "message": f"Captura de traps activada para {interfaz} en {host}",
+            "estado": estado
+        }), 200
+    else:
+        return jsonify({
+            "message": f"Captura activa para {interfaz} en {host}",
+            "estdo": "Error"
+        }), 400
+
+# Delete - Para la captura de traps linkup y linkdown de una interfaz en especifico, retornar json con el estado de la interfaz
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/estado", methods=["DELETE"])
+def detener_traps_interfaz(host, interfaz):
+    ok = traps_service.stop_trap_capture(host, interfaz)
+    if ok:
+        estado = traps_service.get_interface_trap_status(host, interfaz)
+        return jsonify({
+            "message": f"captura de traps detenida en {interfaz} en el host: {host}",
+            "estado": estado
+        }), 200
+    else:
+        return jsonify({
+            "message": f"No hay captura activa para {interfaz} en {host}",
+            "estado": "inexistente"
+        }), 400
+
+# Grafica Traps
+@routers_bp.route("/<host>/interfaces/<path:interfaz>/grafica_traps", methods=["GET"])
+def obtener_grafica_traps(host, interfaz):
+    filename = f"data/traps_{host.replace('.', '')}{interfaz.replace('/', '_')}.json"
+    if not os.path.exists(filename):
+        return jsonify({"error": "No hay traps registrados para graficar"}), 404
+    
+    with open(filename, "r") as f:
+        traps = json.load(f)
+    
+    if not traps:
+        return jsonify({"error":"El archivo existe pero no contiene traps"}), 400
+    
+    timestamps = [entry["timestamp"] for entry in traps]
+    estados = [1 if entry["type"] == "linkUp" else 0 for entry in traps]
+
+    plt.figure(figsize=(10, 6))
+    plt.step(timestamps, estados, where='post')
+    plt.yticks([0, 1], ["linkDown", "linkUp"])
+    plt.xticks(rotation=45)
+    plt.title(f"Traps linkUp/linkDown para {interfaz} ({host})")
+    plt.xlabel("Tiempo")
+    plt.ylabel("Estado")
+    plt.tight_layout()
+
     img = io.BytesIO()
     plt.savefig(img, format="png")
     img.seek(0)
