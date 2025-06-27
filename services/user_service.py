@@ -31,8 +31,7 @@ class UserService:
 
         client = RouterSSHClient(router["ip"], router["username"], router["password"])
         users = client.get_users()
-        for user in users:
-            user["router"] = router["ip"]
+        
         return users
 
     def create_user(self, new_user):
@@ -44,7 +43,6 @@ class UserService:
                 new_user["privilege"],
                 new_user["password"]
             )
-            result["router"] = router["ip"]
             results.append(result)
         return results
 
@@ -58,7 +56,6 @@ class UserService:
             new_user["privilege"],
             new_user["password"]
         )
-        result["router"] = router["ip"]
         return result
 
     def delete_user(self, username):
@@ -66,7 +63,6 @@ class UserService:
         for router in self.routers:
             client = RouterSSHClient(router["ip"], router["username"], router["password"])
             result = client.delete_user(username)
-            result["router"] = router["ip"]
             results.append(result)
         return results
 
@@ -76,7 +72,6 @@ class UserService:
             return None
         client = RouterSSHClient(router["ip"], router["username"], router["password"])
         result = client.delete_user(username)
-        result["router"] = router["ip"]
         return result
 
     def update_users(self, old_username, new_user):
@@ -89,7 +84,6 @@ class UserService:
                 new_user["password"],
                 new_user["privilege"]
             )
-            result["router"] = router["ip"]
             results.append(result)
         return results
 
@@ -104,5 +98,4 @@ class UserService:
             new_user["password"],
             new_user["privilege"],
         )
-        result["router"] = router["ip"]
         return result

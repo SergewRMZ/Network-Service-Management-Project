@@ -82,7 +82,6 @@ class RouterSSHClient:
                 users.append({
                     "username": username,
                     "privilege": privilege,
-                    "auth_method": "secret",
                     "host": self.host
                 })
 
@@ -157,7 +156,6 @@ class RouterSSHClient:
             "status": "updated", 
             "privilege": privilege,
             "username": old_username,
-            "auth_method": "secret" 
         }
 
     def close(self):

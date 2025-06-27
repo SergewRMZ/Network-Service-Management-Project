@@ -13,7 +13,7 @@ service = TopologyService(ROUTERS)
 
 demonio_thread = None
 demonio_running = False
-demonio_interval = 300  # 5 minutos en segundos
+demonio_interval = 30  # 5 minutos en segundos
 
 def demonio_func():
     global demonio_running, demonio_interval

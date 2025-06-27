@@ -14,22 +14,8 @@ ROUTERS = [
         "rol": "Nucleo"
     },
     {
-        "name": "R3.redes.local",
-        "ip": "192.168.100.3",
-        "username": "admin",
-        "password": "12345",
-        "rol": "Nucleo"
-    },
-    {
         "name": "R4.redes.local",
         "ip": "192.168.100.4",
-        "username": "admin",
-        "password": "12345",
-        "rol": "Hoja"
-    },
-    {
-        "name": "R5.redes.local",
-        "ip": "192.168.100.5",
         "username": "admin",
         "password": "12345",
         "rol": "Hoja"
