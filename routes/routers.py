@@ -88,7 +88,8 @@ def get_interface_info(host):
 # Rutas para MonitorService
 @routers_bp.route("/<host>/interfaces/<path:interfaz>/octetos/<int:tiempo>", methods=["POST"])
 def iniciar_monitoreo_octetos(host, interfaz, tiempo):
-    duracion = request.args.get("duracion", default=60, type=int)
+    duracion = request.args.get("duration", default=60, type=int)
+    print("duracion obtenida:", duracion)
     ok = monitor_service.start_monitoring(host, interfaz, tiempo, duracion)
     if ok:
         return jsonify({
@@ -196,8 +197,9 @@ def activar_traps_interfaz(host, interfaz):
 @routers_bp.route("/<host>/interfaces/<path:interfaz>/estado", methods=["DELETE"])
 def detener_traps_interfaz(host, interfaz):
     ok = traps_service.stop_trap_capture(host, interfaz)
+    estado = traps_service.get_interface_trap_status(host, interfaz)
+
     if ok:
-        estado = traps_service.get_interface_trap_status(host, interfaz)
         return jsonify({
             "message": f"captura de traps detenida en {interfaz} en el host: {host}",
             "estado": estado

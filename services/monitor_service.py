@@ -84,4 +84,5 @@ class MonitorService:
         if task:
             task.cancel()
             return True
-        return False
+        else: 
+            return False
